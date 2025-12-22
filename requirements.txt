@@ -7,6 +7,9 @@ opencv-python>=4.10.0
 # YOLOv8 Object Detection
 ultralytics>=8.3.0
 
+# Configuration File Support
+pyyaml>=6.0
+
 # Additional dependencies (automatically installed by ultralytics)
 # - torch>=2.0.0 (PyTorch for deep learning)
 # - torchvision>=0.15.0 (Vision utilities)
