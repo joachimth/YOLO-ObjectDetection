@@ -45,3 +45,12 @@ config.yaml
 
 # Logs
 *.log
+
+# Test videos and outputs
+test_videos/
+test_video.mp4
+output_video.mp4
+detections.json
+*.mp4
+*.avi
+*.mov

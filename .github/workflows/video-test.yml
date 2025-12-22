@@ -1,0 +1,99 @@
+name: YOLO Video Test
+
+on:
+  push:
+    branches:
+      - main
+      - claude/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-video-detection:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download test video
+        run: |
+          # Download a short sample video from Pexels (free stock video)
+          # This is a short clip of people walking - good for object detection testing
+          curl -L -o test_video.mp4 "https://cdn.pixabay.com/video/2019/07/18/25307-349368863_tiny.mp4"
+
+          # Verify video was downloaded
+          ls -lh test_video.mp4
+
+      - name: Run YOLO object detection
+        run: |
+          python main.py \
+            --source test_video.mp4 \
+            --model yolo11n.pt \
+            --confidence 0.5 \
+            --output output_video.mp4 \
+            --data-output detections.json \
+            --headless \
+            --verbose
+
+      - name: Verify outputs
+        run: |
+          echo "Checking output files..."
+          ls -lh output_video.mp4
+          ls -lh detections.json
+
+          echo "Detection data summary:"
+          cat detections.json | python -m json.tool | head -50
+
+      - name: Upload annotated video
+        uses: actions/upload-artifact@v4
+        with:
+          name: annotated-video
+          path: output_video.mp4
+          retention-days: 30
+
+      - name: Upload detection data
+        uses: actions/upload-artifact@v4
+        with:
+          name: detection-data
+          path: detections.json
+          retention-days: 30
+
+      - name: Create test summary
+        run: |
+          echo "## YOLO Object Detection Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Video Processing Summary" >> $GITHUB_STEP_SUMMARY
+
+          # Extract summary from JSON
+          TOTAL_FRAMES=$(cat detections.json | python -c "import sys, json; data=json.load(sys.stdin); print(data['summary']['total_frames'])")
+          TOTAL_DETECTIONS=$(cat detections.json | python -c "import sys, json; data=json.load(sys.stdin); print(data['summary']['total_detections'])")
+
+          echo "- **Total Frames Processed:** $TOTAL_FRAMES" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Objects Detected:** $TOTAL_DETECTIONS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Detected Object Classes" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat detections.json | python -c "import sys, json; data=json.load(sys.stdin); print(json.dumps(data['summary']['class_counts'], indent=2))" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📹 Annotated video available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Detection data (JSON) available in workflow artifacts" >> $GITHUB_STEP_SUMMARY

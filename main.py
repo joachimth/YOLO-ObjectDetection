@@ -9,10 +9,12 @@ Updated: 2025-12-22
 """
 
 import argparse
+import json
 import logging
 import sys
 import time
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -248,7 +250,10 @@ class ObjectDetector:
     def run_detection(
         self,
         video_source: int | str = 0,
-        window_name: str = "AI Vision - YOLO Object Detection"
+        window_name: str = "AI Vision - YOLO Object Detection",
+        output_video: Optional[str] = None,
+        output_data: Optional[str] = None,
+        headless: bool = False
     ) -> None:
         """
         Run real-time object detection on video source.
@@ -256,6 +261,9 @@ class ObjectDetector:
         Args:
             video_source: Camera device index or video file path
             window_name: Name of the display window
+            output_video: Path to save annotated video (optional)
+            output_data: Path to save detection data JSON (optional)
+            headless: Run without display window (for CI/CD)
         """
         logger.info(f"Opening video source: {video_source}")
 
@@ -272,7 +280,30 @@ class ObjectDetector:
         fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
 
         logger.info(f"Video opened: {width}x{height} @ {fps}fps")
-        logger.info("Press 'q' or ESC to exit")
+
+        # Setup video writer if output path specified
+        video_writer = None
+        if output_video:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            video_writer = cv2.VideoWriter(output_video, fourcc, fps, (width, height))
+            logger.info(f"Saving output video to: {output_video}")
+
+        # Initialize data collection for export
+        detection_data = {
+            'metadata': {
+                'video_source': str(video_source),
+                'model': self.model_name,
+                'confidence_threshold': self.confidence_threshold,
+                'timestamp': datetime.now().isoformat(),
+                'resolution': f"{width}x{height}",
+                'fps': fps
+            },
+            'frames': [],
+            'summary': {}
+        }
+
+        if not headless:
+            logger.info("Press 'q' or ESC to exit")
 
         frame_count = 0
         last_time = time.time()
@@ -307,21 +338,41 @@ class ObjectDetector:
                 if self.show_stats:
                     self.draw_stats(annotated_frame, detected_objects)
 
-                # Display frame
-                cv2.imshow(window_name, annotated_frame)
+                # Save frame to output video if enabled
+                if video_writer:
+                    video_writer.write(annotated_frame)
+
+                # Collect detection data for export
+                if output_data:
+                    frame_data = {
+                        'frame_number': frame_count,
+                        'timestamp': frame_count / fps if fps > 0 else 0,
+                        'objects': detected_objects,
+                        'unique_objects': list(set(detected_objects)),
+                        'object_count': len(detected_objects)
+                    }
+                    detection_data['frames'].append(frame_data)
+
+                # Display frame (only if not headless)
+                if not headless:
+                    cv2.imshow(window_name, annotated_frame)
 
                 # Log detections periodically (every 30 frames)
                 if detected_objects and frame_count % 30 == 0:
                     unique_objects = set(detected_objects)
-                    logger.info(f"Detected: {', '.join(unique_objects)}")
+                    logger.info(f"Frame {frame_count}: Detected {', '.join(unique_objects)}")
 
                 frame_count += 1
 
-                # Check for exit key (q or ESC)
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q') or key == 27:  # 27 is ESC key
-                    logger.info("Exit key pressed")
-                    break
+                # Check for exit key (q or ESC) - only in interactive mode
+                if not headless:
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord('q') or key == 27:  # 27 is ESC key
+                        logger.info("Exit key pressed")
+                        break
+                else:
+                    # In headless mode, just process next frame immediately
+                    cv2.waitKey(1)
 
         except KeyboardInterrupt:
             logger.info("Interrupted by user")
@@ -338,8 +389,28 @@ class ObjectDetector:
                 logger.info(f"  Objects detected by class:")
                 for cls, count in sorted(self.class_counts.items(), key=lambda x: x[1], reverse=True):
                     logger.info(f"    {cls}: {count}")
+
+            # Release video writer
+            if video_writer:
+                video_writer.release()
+                logger.info(f"Output video saved to: {output_video}")
+
+            # Save detection data to JSON
+            if output_data:
+                detection_data['summary'] = {
+                    'total_frames': frame_count,
+                    'total_detections': self.total_detections,
+                    'class_counts': dict(self.class_counts),
+                    'processing_complete': True
+                }
+
+                with open(output_data, 'w') as f:
+                    json.dump(detection_data, f, indent=2)
+                logger.info(f"Detection data saved to: {output_data}")
+
             cap.release()
-            cv2.destroyAllWindows()
+            if not headless:
+                cv2.destroyAllWindows()
             logger.info("Detection stopped")
 
 
@@ -456,6 +527,24 @@ Examples:
         help='Object classes to trigger alerts (e.g., --alert person car dog)'
     )
 
+    parser.add_argument(
+        '--output',
+        type=str,
+        help='Path to save annotated output video (e.g., output.mp4)'
+    )
+
+    parser.add_argument(
+        '--data-output',
+        type=str,
+        help='Path to save detection data as JSON (e.g., detections.json)'
+    )
+
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='Run without display window (for CI/CD environments)'
+    )
+
     return parser.parse_args()
 
 
@@ -535,7 +624,12 @@ def main() -> int:
         )
 
         # Run detection
-        detector.run_detection(video_source=video_source)
+        detector.run_detection(
+            video_source=video_source,
+            output_video=args.output,
+            output_data=args.data_output,
+            headless=args.headless
+        )
 
         return 0
 
