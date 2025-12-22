@@ -1,7 +1,7 @@
 """
 YOLO Object Detection Application
 
-Real-time object detection using YOLOv8 and webcam feed.
+Real-time object detection using YOLO11 and webcam feed.
 Detects and tracks objects from 80 COCO dataset classes.
 
 Author: YOLO-ObjectDetection
@@ -32,11 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectDetector:
-    """Real-time object detection using YOLOv8."""
+    """Real-time object detection using YOLO11."""
 
     def __init__(
         self,
-        model_name: str = "yolov8n.pt",
+        model_name: str = "yolo11n.pt",
         confidence_threshold: float = 0.5,
         box_color: Tuple[int, int, int] = (0, 255, 0),
         box_thickness: int = 2,
@@ -51,7 +51,7 @@ class ObjectDetector:
         Initialize the Object Detector.
 
         Args:
-            model_name: YOLOv8 model variant (yolov8n/s/m/l/x.pt)
+            model_name: YOLO11 model variant (yolo11n/s/m/l/x.pt)
             confidence_threshold: Minimum confidence for detections (0.0-1.0)
             box_color: BGR color tuple for bounding boxes
             box_thickness: Thickness of bounding box lines
@@ -369,15 +369,16 @@ def load_config(config_path: Path) -> Dict:
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Real-time object detection using YOLOv8",
+        description="Real-time object detection using YOLO11",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                          # Use default webcam
+  %(prog)s                          # Use default webcam with config.yaml
   %(prog)s --source 1               # Use second camera
   %(prog)s --source video.mp4       # Use video file
-  %(prog)s --model yolov8s.pt       # Use small model
+  %(prog)s --model yolo11s.pt       # Use small model
   %(prog)s --confidence 0.7         # Higher confidence threshold
+  %(prog)s --config custom.yaml     # Use custom config file
         """
     )
 
@@ -391,9 +392,9 @@ Examples:
     parser.add_argument(
         '--model',
         type=str,
-        default='yolov8n.pt',
-        choices=['yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', 'yolov8x.pt'],
-        help='YOLO model variant (default: yolov8n.pt)'
+        default='yolo11n.pt',
+        choices=['yolo11n.pt', 'yolo11s.pt', 'yolo11m.pt', 'yolo11l.pt', 'yolo11x.pt'],
+        help='YOLO11 model variant (default: yolo11n.pt)'
     )
 
     parser.add_argument(
@@ -426,7 +427,8 @@ Examples:
     parser.add_argument(
         '--config',
         type=str,
-        help='Path to YAML configuration file'
+        default='config.yaml',
+        help='Path to YAML configuration file (default: config.yaml if exists)'
     )
 
     parser.add_argument(
@@ -466,17 +468,24 @@ def main() -> int:
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    # Load config file if provided
+    # Load config file if it exists (default: config.yaml)
     config = {}
-    if args.config:
+    config_path = Path(args.config)
+
+    # Auto-load config.yaml if it exists and no custom config specified
+    if config_path.exists():
         try:
-            config = load_config(Path(args.config))
+            config = load_config(config_path)
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             return 1
+    elif args.config != 'config.yaml':
+        # User specified a custom config but it doesn't exist
+        logger.error(f"Configuration file not found: {args.config}")
+        return 1
 
     # Merge CLI args with config (CLI args take precedence)
-    model_name = args.model if hasattr(args, 'model') else config.get('model_name', 'yolov8n.pt')
+    model_name = args.model if hasattr(args, 'model') else config.get('model_name', 'yolo11n.pt')
     confidence = args.confidence if hasattr(args, 'confidence') else config.get('confidence_threshold', 0.5)
     thickness = args.thickness if hasattr(args, 'thickness') else config.get('box_thickness', 2)
     source = args.source if hasattr(args, 'source') else config.get('video_source', '0')

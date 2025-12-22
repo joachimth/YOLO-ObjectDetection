@@ -2,19 +2,21 @@
 
 ## Project Overview
 
-**YOLO-ObjectDetection** is a real-time object detection application using YOLOv8 (You Only Look Once) from Ultralytics. The project captures video from a webcam and performs real-time object detection, drawing bounding boxes and labels on detected objects.
+**YOLO-ObjectDetection** is a real-time object detection application using YOLO11 (You Only Look Once) from Ultralytics. The project captures video from a webcam and performs real-time object detection, drawing bounding boxes and labels on detected objects.
 
 ### Key Technologies
-- **YOLOv8**: State-of-the-art object detection model (yolov8n.pt - nano variant)
+- **YOLO11**: Latest state-of-the-art object detection model (yolo11n.pt - nano variant by default)
 - **OpenCV (cv2)**: Computer vision library for video capture and display
-- **Ultralytics**: YOLOv8 implementation and model management
+- **Ultralytics**: YOLO11 implementation and model management
 
 ## Repository Structure
 
 ```
 YOLO-ObjectDetection/
-├── main.py              # Main application entry point (300 lines)
+├── main.py              # Main application entry point (540 lines)
 ├── requirements.txt     # Python dependencies with version specs
+├── config.yaml          # Default configuration (auto-loaded)
+├── config.example.yaml  # Example config with detailed model descriptions
 ├── README.md           # User-facing documentation
 └── CLAUDE.md           # This file - AI assistant documentation
 ```
@@ -59,14 +61,15 @@ The codebase follows modern Python best practices:
    - `detect_objects()`: Process single frame
    - `run_detection()`: Main detection loop
 
-2. **Model Initialization** (`main.py:61-67`)
+2. **Model Initialization** (`main.py:82-92`)
    ```python
    self.model = YOLO(model_name)
    ```
-   - Loads YOLOv8 model variant (default: nano)
+   - Loads YOLO11 model variant (default: nano)
    - Error handling for model loading failures
    - Logs device information (CPU/GPU)
    - Model downloaded automatically on first run
+   - YOLO11 offers 22% fewer parameters than YOLOv8 with higher accuracy
 
 3. **Detection Pipeline** (`detect_objects()` at `main.py:69-120`)
    - **Input**: `np.ndarray` (BGR frame)
@@ -98,23 +101,25 @@ The codebase follows modern Python best practices:
 ### Required Packages
 ```
 opencv-python (cv2)  # Video capture and image processing
-ultralytics          # YOLOv8 model implementation
+ultralytics          # YOLO11 model implementation
+pyyaml               # Configuration file support
 ```
 
 ### Installation
 ```bash
-pip install opencv-python ultralytics
+pip install -r requirements.txt
 ```
 
 ### Model Files
-- **yolov8n.pt**: Downloaded automatically on first run
+- **yolo11n.pt**: Downloaded automatically on first run (~6MB)
 - Model supports 80 COCO dataset classes (person, car, dog, etc.)
+- YOLO11 models: n (nano), s (small), m (medium), l (large), x (extra-large)
 
 ## Development Workflows
 
 ### Running the Application
 
-**Basic Usage** (default webcam):
+**Basic Usage** (default webcam, auto-loads config.yaml):
 ```bash
 python main.py
 ```
@@ -128,7 +133,7 @@ python main.py --source 1
 python main.py --source video.mp4
 
 # Use different model
-python main.py --model yolov8s.pt
+python main.py --model yolo11s.pt
 
 # Adjust confidence threshold
 python main.py --confidence 0.7
@@ -136,11 +141,14 @@ python main.py --confidence 0.7
 # Custom bounding box color (red)
 python main.py --color 0,0,255
 
+# Use custom config file
+python main.py --config custom.yaml
+
 # Verbose logging
 python main.py --verbose
 
 # Combined options
-python main.py --source video.mp4 --model yolov8m.pt --confidence 0.6 --color 255,0,0
+python main.py --source video.mp4 --model yolo11m.pt --confidence 0.6 --color 255,0,0
 ```
 
 **View Help**:
@@ -167,12 +175,17 @@ python main.py --help
 ### Common Development Tasks
 
 #### Changing Detection Threshold
-**Via CLI** (recommended):
+**Via Config** (recommended - edit config.yaml):
+```yaml
+confidence_threshold: 0.7
+```
+
+**Via CLI**:
 ```bash
 python main.py --confidence 0.7
 ```
 
-**Via Code** (line 37):
+**Via Code** (line 40):
 ```python
 confidence_threshold: float = 0.5  # Change default
 ```
@@ -180,22 +193,29 @@ confidence_threshold: float = 0.5  # Change default
 - Higher (e.g., 0.7): Fewer detections, higher precision
 
 #### Switching YOLO Models
-**Via CLI** (recommended):
+**Via Config** (recommended - edit config.yaml):
+```yaml
+model_name: "yolo11m.pt"
+```
+
+**Via CLI**:
 ```bash
-python main.py --model yolov8m.pt
+python main.py --model yolo11m.pt
 ```
 
-**Via Code** (line 36):
+**Via Code** (line 39):
 ```python
-model_name: str = "yolov8n.pt"  # Change default
+model_name: str = "yolo11n.pt"  # Change default
 ```
 
-Available models:
-- `yolov8n.pt`: Nano (6MB, fastest, good accuracy)
-- `yolov8s.pt`: Small (22MB, fast, better accuracy)
-- `yolov8m.pt`: Medium (52MB, balanced)
-- `yolov8l.pt`: Large (87MB, slow, excellent)
-- `yolov8x.pt`: Extra large (136MB, slowest, best)
+Available models (YOLO11):
+- `yolo11n.pt`: Nano (6MB, 2.6M params, 80+ FPS CPU, fastest)
+- `yolo11s.pt`: Small (18MB, 9.4M params, 50+ FPS CPU, balanced)
+- `yolo11m.pt`: Medium (40MB, 20.1M params, 30+ FPS CPU, great accuracy)
+- `yolo11l.pt`: Large (50MB, 25.3M params, 15+ FPS CPU, excellent)
+- `yolo11x.pt`: Extra large (56MB, 56.9M params, 8+ FPS CPU, best)
+
+**Note**: YOLO11 achieves 22% fewer parameters than YOLOv8 with higher accuracy!
 
 #### Changing Video Source
 **Via CLI** (recommended):
@@ -317,33 +337,31 @@ finally:
    - Use cv2.VideoWriter to save annotated video
    - Add start/stop recording controls
 
-### Adding Configuration File Support
+### Configuration File Support
 
-The current CLI-based configuration is flexible, but you could add config file support:
+The application now supports YAML configuration files:
 
-```python
-from pathlib import Path
-import yaml  # or json
-
-def load_config(config_path: Path) -> dict:
-    """Load configuration from YAML file."""
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
-
-# In main():
-if args.config:
-    config = load_config(Path(args.config))
-    detector = ObjectDetector(**config)
-```
+**Default**: `config.yaml` is automatically loaded if it exists
+**Custom**: Use `--config custom.yaml` to specify a different config file
+**Priority**: CLI arguments override config file settings
 
 Example `config.yaml`:
 ```yaml
-model_name: yolov8m.pt
+model_name: "yolo11m.pt"
 confidence_threshold: 0.6
+video_source: 0
 box_color: [0, 255, 0]
 box_thickness: 2
 font_scale: 0.7
+enable_tracking: true
+show_fps: true
+show_stats: true
+alert_objects:
+  - person
+  - car
 ```
+
+See `config.example.yaml` for detailed documentation of all models and settings.
 
 ## Best Practices for AI Assistants
 
@@ -444,11 +462,11 @@ When making significant changes, update:
 
 **Poor detection performance**
 - Increase confidence threshold to reduce false positives
-- Upgrade to larger model (yolov8s.pt or yolov8m.pt)
+- Upgrade to larger model (yolo11s.pt or yolo11m.pt)
 - Ensure adequate lighting
 
 **Low FPS**
-- Use nano model (yolov8n.pt)
+- Use nano model (yolo11n.pt - default)
 - Reduce frame resolution
 - Skip frames (process every N frames)
 - Use GPU if available (CUDA-enabled PyTorch)
@@ -456,15 +474,23 @@ When making significant changes, update:
 ## Resources
 
 ### Official Documentation
-- [Ultralytics YOLOv8 Docs](https://docs.ultralytics.com/)
+- [Ultralytics YOLO11 Docs](https://docs.ultralytics.com/models/yolo11/)
+- [Ultralytics Main Docs](https://docs.ultralytics.com/)
 - [OpenCV Python Tutorials](https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html)
 
-### YOLO Model Variants
-- YOLOv8n: 3.2M parameters, fastest
-- YOLOv8s: 11.2M parameters
-- YOLOv8m: 25.9M parameters
-- YOLOv8l: 43.7M parameters
-- YOLOv8x: 68.2M parameters, most accurate
+### YOLO Model Variants (YOLO11)
+- YOLO11n: 2.6M parameters, fastest
+- YOLO11s: 9.4M parameters, balanced
+- YOLO11m: 20.1M parameters, great accuracy
+- YOLO11l: 25.3M parameters, excellent
+- YOLO11x: 56.9M parameters, most accurate
+
+### Why YOLO11?
+- **22% fewer parameters** than YOLOv8 with higher mAP
+- **Better stability** under domain shift
+- **Improved small-object detection**
+- **Same API** as YOLOv8 (easy upgrade)
+- **Production-ready** (released Sept 2024)
 
 ### Supported Object Classes
 80 COCO classes including:
