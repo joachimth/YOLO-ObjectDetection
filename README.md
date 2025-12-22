@@ -9,12 +9,16 @@ Real-time object detection using YOLOv8 and webcam feed. Detect and track 80 dif
 
 ## Features ✨
 
-- **Real-time Detection**: Process webcam feed at high FPS
+- **Real-time Detection**: Process webcam feed at high FPS with live FPS counter
 - **80 Object Classes**: Detect people, vehicles, animals, and common objects
+- **Object Tracking**: Track objects between frames with unique IDs
 - **Visual Feedback**: Bounding boxes and labels drawn on detected objects
+- **Statistics Display**: Live object counting and detection statistics on screen
+- **Alert System**: Customizable alerts for specific object classes
 - **Confidence Filtering**: Configurable threshold to reduce false positives
 - **Multiple YOLO Models**: Support for nano, small, medium, large, and extra-large variants
-- **Easy Configuration**: Simple code structure for quick customization
+- **Configuration Files**: YAML-based configuration with CLI override support
+- **Professional CLI**: Full command-line interface with argparse
 
 ## Quick Start 🚀
 
@@ -54,51 +58,92 @@ Simply run the script to start real-time object detection:
 python main.py
 ```
 
-- The webcam feed will open in a window titled "AI Vision"
+- The webcam feed will open in a window titled "AI Vision - YOLO Object Detection"
 - Detected objects will be highlighted with green bounding boxes
 - Object labels will appear above each detection
-- Console will print detected objects in real-time
-- Press any key to exit
+- FPS counter displayed in top-left (yellow)
+- Statistics shown on left side (white)
+- Console will print detected objects periodically
+- Press 'q' or ESC to exit
 
-### Configuration Options
+### Command-Line Options
 
-#### Change Detection Confidence
+Full CLI support with professional argument parsing:
 
-Edit `main.py` line 17:
-```python
-if confidence > 0.5:  # Change threshold (0.0 - 1.0)
+```bash
+# View all available options
+python main.py --help
+
+# Use different camera
+python main.py --source 1
+
+# Use video file
+python main.py --source video.mp4
+
+# Use different model
+python main.py --model yolov8s.pt
+
+# Adjust confidence threshold
+python main.py --confidence 0.7
+
+# Custom bounding box color (red in BGR format)
+python main.py --color 0,0,255
+
+# Enable object tracking
+python main.py --tracking
+
+# Set up alerts for specific objects
+python main.py --alert person car dog
+
+# Disable FPS counter
+python main.py --no-fps
+
+# Disable statistics display
+python main.py --no-stats
+
+# Combine multiple options
+python main.py --source video.mp4 --model yolov8m.pt --confidence 0.6 --tracking --alert person
 ```
-- Lower (e.g., 0.3): More detections, may include false positives
-- Higher (e.g., 0.7): Fewer detections, higher precision
 
-#### Switch YOLO Model
+### Configuration File Usage
 
-Edit `main.py` line 5:
-```python
-model = YOLO("yolov8n.pt")  # Change model variant
+Create a YAML configuration file for easier management:
+
+```bash
+# Copy example config
+cp config.example.yaml config.yaml
+
+# Edit config.yaml with your settings
+# Then run with config file
+python main.py --config config.yaml
+
+# CLI arguments override config file settings
+python main.py --config config.yaml --confidence 0.8
 ```
 
-Available models:
-| Model | Size | Speed | Accuracy |
-|-------|------|-------|----------|
-| yolov8n.pt | 6MB | Fastest | Good |
-| yolov8s.pt | 22MB | Fast | Better |
-| yolov8m.pt | 52MB | Medium | Great |
-| yolov8l.pt | 87MB | Slow | Excellent |
-| yolov8x.pt | 136MB | Slowest | Best |
-
-#### Change Video Source
-
-Edit `main.py` line 30:
-```python
-cap = cv2.VideoCapture(0)  # Change input source
+Example `config.yaml`:
+```yaml
+model_name: "yolov8n.pt"
+confidence_threshold: 0.5
+video_source: 0
+enable_tracking: true
+show_fps: true
+show_stats: true
+alert_objects:
+  - person
+  - car
+box_color: [0, 255, 0]
 ```
 
-Options:
-- `0`: Default webcam
-- `1, 2, ...`: Other camera devices
-- `"video.mp4"`: Video file path
-- `"http://..."`: IP camera stream URL
+### Available Models
+
+| Model | Size | Speed | Accuracy | Use Case |
+|-------|------|-------|----------|----------|
+| yolov8n.pt | 6MB | Fastest | Good | Real-time on CPU |
+| yolov8s.pt | 22MB | Fast | Better | Balanced CPU usage |
+| yolov8m.pt | 52MB | Medium | Great | Better accuracy |
+| yolov8l.pt | 87MB | Slow | Excellent | GPU recommended |
+| yolov8x.pt | 136MB | Slowest | Best | Max accuracy, GPU only |
 
 ## Detected Object Classes 🏷️
 
@@ -230,8 +275,9 @@ cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0
 
 ```
 YOLO-ObjectDetection/
-├── main.py              # Main application
+├── main.py              # Main application with CLI and tracking
 ├── requirements.txt     # Python dependencies
+├── config.example.yaml  # Example configuration file
 ├── README.md           # This file
 ├── CLAUDE.md           # AI assistant documentation
 └── yolov8n.pt          # Model weights (auto-downloaded)
@@ -239,17 +285,24 @@ YOLO-ObjectDetection/
 
 ## Contributing 🤝
 
-Contributions are welcome! Areas for improvement:
+Contributions are welcome! Recently completed features:
 
-- [ ] Add command-line arguments for configuration
+- [x] Add command-line arguments for configuration
+- [x] Add FPS counter display
+- [x] Object tracking between frames
+- [x] Object counting and statistics
+- [x] Alert system for specific objects
+- [x] Configuration file support
+
+Areas for future improvement:
+
 - [ ] Implement video recording functionality
-- [ ] Add FPS counter display
-- [ ] Object tracking between frames
 - [ ] Multi-camera support
 - [ ] Web interface for remote viewing
-- [ ] Object counting and statistics
-- [ ] Alert system for specific objects
-- [ ] Configuration file support
+- [ ] Export detection data to CSV/JSON
+- [ ] Custom alert actions (email, webhook, sound)
+- [ ] Region of interest (ROI) detection
+- [ ] Heat map generation for object movement
 
 ## License 📄
 
