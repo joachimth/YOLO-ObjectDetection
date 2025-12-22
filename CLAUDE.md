@@ -13,47 +13,85 @@
 
 ```
 YOLO-ObjectDetection/
-├── main.py           # Main application entry point
-└── CLAUDE.md         # This file - AI assistant documentation
+├── main.py              # Main application entry point (300 lines)
+├── requirements.txt     # Python dependencies with version specs
+├── README.md           # User-facing documentation
+└── CLAUDE.md           # This file - AI assistant documentation
 ```
 
 ### File Descriptions
 
 #### `main.py`
-The single-file application containing all functionality:
-- **Model Loading** (lines 5): Loads YOLOv8 nano model
-- **Object Detection** (lines 8-26): `detect_objects()` function processes frames
-- **Main Loop** (lines 29-44): `main()` function handles video capture and display
-- **Entry Point** (lines 47-48): Standard Python execution guard
+Modern object-oriented application with full CLI support:
+- **Module Docstring** (lines 1-9): File-level documentation
+- **Imports** (lines 11-19): Modern imports with type hints support
+- **Logging Configuration** (lines 22-28): Structured logging setup
+- **ObjectDetector Class** (lines 31-190): Main detection logic
+  - `__init__()` (lines 34-67): Initialize with configurable parameters
+  - `detect_objects()` (lines 69-120): Process frames and annotate
+  - `run_detection()` (lines 122-190): Main detection loop with error handling
+- **Argument Parser** (lines 193-250): Full CLI argument handling
+- **Main Entry Point** (lines 253-299): Application initialization and execution
 
 ## Code Architecture
 
+### Modern Design Patterns (2025)
+
+The codebase follows modern Python best practices:
+- **Type Hints**: Full type annotations throughout (PEP 484)
+- **Class-Based Design**: OOP with ObjectDetector class
+- **Dependency Injection**: Configurable parameters via constructor
+- **Proper Logging**: Structured logging instead of print statements
+- **Error Handling**: Try-except blocks with proper cleanup
+- **Resource Management**: Finally blocks for cleanup
+- **CLI Interface**: argparse for professional command-line handling
+- **Docstrings**: Complete function and class documentation
+
 ### Core Components
 
-1. **Model Initialization**
+1. **ObjectDetector Class** (`main.py:31-190`)
+   - Encapsulates all detection logic
+   - Configurable via constructor parameters
+   - Thread-safe and reusable
+
+   **Key Methods**:
+   - `__init__()`: Initialize model with custom settings
+   - `detect_objects()`: Process single frame
+   - `run_detection()`: Main detection loop
+
+2. **Model Initialization** (`main.py:61-67`)
    ```python
-   model = YOLO("yolov8n.pt")
+   self.model = YOLO(model_name)
    ```
-   - Uses YOLOv8 nano model (smallest, fastest variant)
-   - Model is loaded once at module level for efficiency
-   - On first run, downloads the model weights automatically
+   - Loads YOLOv8 model variant (default: nano)
+   - Error handling for model loading failures
+   - Logs device information (CPU/GPU)
+   - Model downloaded automatically on first run
 
-2. **Detection Pipeline** (`detect_objects()`)
-   - **Input**: Video frame (numpy array)
-   - **Output**: Annotated frame + list of detected object labels
+3. **Detection Pipeline** (`detect_objects()` at `main.py:69-120`)
+   - **Input**: `np.ndarray` (BGR frame)
+   - **Output**: `Tuple[np.ndarray, List[str]]` (annotated frame, labels)
    - **Process**:
-     - Runs YOLO inference on frame
-     - Filters detections by confidence threshold (>0.5)
-     - Draws bounding boxes (green, 2px thickness)
-     - Adds text labels above boxes
-   - Located at: `main.py:8-26`
+     - Runs YOLO inference with `verbose=False`
+     - Filters by confidence threshold (configurable)
+     - Draws bounding boxes with custom colors/thickness
+     - Adds labels with confidence scores (e.g., "person 0.87")
+   - Type-safe with full annotations
 
-3. **Video Capture Loop** (`main()`)
-   - Opens webcam (device index 0)
-   - Continuously captures frames
-   - Displays results in "AI Vision" window
-   - Prints detected objects to console
-   - Located at: `main.py:29-44`
+4. **Video Capture Loop** (`run_detection()` at `main.py:122-190`)
+   - Opens video source (camera index or file path)
+   - Validates video source accessibility
+   - Logs video properties (resolution, FPS)
+   - Processes frames continuously
+   - Handles keyboard interrupts gracefully
+   - Proper resource cleanup in finally block
+   - Multiple exit methods: 'q' key, ESC key, or Ctrl+C
+
+5. **CLI Argument Parsing** (`main.py:193-250`)
+   - Professional argparse implementation
+   - Supports all common use cases
+   - Validation of inputs (confidence range, color format)
+   - Help text with examples
 
 ## Dependencies
 
@@ -75,81 +113,185 @@ pip install opencv-python ultralytics
 ## Development Workflows
 
 ### Running the Application
+
+**Basic Usage** (default webcam):
 ```bash
 python main.py
 ```
-- Requires webcam/camera device
-- Press any key to exit (handled by cv2.waitKey)
-- Displays real-time detection in window
+
+**With Command-Line Arguments**:
+```bash
+# Use different camera
+python main.py --source 1
+
+# Use video file
+python main.py --source video.mp4
+
+# Use different model
+python main.py --model yolov8s.pt
+
+# Adjust confidence threshold
+python main.py --confidence 0.7
+
+# Custom bounding box color (red)
+python main.py --color 0,0,255
+
+# Verbose logging
+python main.py --verbose
+
+# Combined options
+python main.py --source video.mp4 --model yolov8m.pt --confidence 0.6 --color 255,0,0
+```
+
+**View Help**:
+```bash
+python main.py --help
+```
+
+### Exit Methods
+- Press **'q'** key
+- Press **ESC** key
+- Press **Ctrl+C** (keyboard interrupt)
 
 ### Testing Changes
-1. Modify code in `main.py`
-2. Run application to test
-3. Verify webcam feed and detection results
-4. Check console output for detected objects
+
+1. **Modify code** in `main.py`
+2. **Run with test parameters**:
+   ```bash
+   python main.py --verbose --confidence 0.3
+   ```
+3. **Check logs** for structured output
+4. **Verify** webcam feed and detection results
+5. **Monitor** console for detection logs (every 30 frames)
 
 ### Common Development Tasks
 
 #### Changing Detection Threshold
-Current threshold: 0.5 at `main.py:17`
+**Via CLI** (recommended):
+```bash
+python main.py --confidence 0.7
+```
+
+**Via Code** (line 37):
 ```python
-if confidence > 0.5:  # Adjust this value
+confidence_threshold: float = 0.5  # Change default
 ```
 - Lower (e.g., 0.3): More detections, more false positives
 - Higher (e.g., 0.7): Fewer detections, higher precision
 
 #### Switching YOLO Models
-At `main.py:5`:
-- `yolov8n.pt`: Nano (fastest, least accurate)
-- `yolov8s.pt`: Small
-- `yolov8m.pt`: Medium
-- `yolov8l.pt`: Large
-- `yolov8x.pt`: Extra large (slowest, most accurate)
+**Via CLI** (recommended):
+```bash
+python main.py --model yolov8m.pt
+```
+
+**Via Code** (line 36):
+```python
+model_name: str = "yolov8n.pt"  # Change default
+```
+
+Available models:
+- `yolov8n.pt`: Nano (6MB, fastest, good accuracy)
+- `yolov8s.pt`: Small (22MB, fast, better accuracy)
+- `yolov8m.pt`: Medium (52MB, balanced)
+- `yolov8l.pt`: Large (87MB, slow, excellent)
+- `yolov8x.pt`: Extra large (136MB, slowest, best)
 
 #### Changing Video Source
-At `main.py:30`:
-```python
-cap = cv2.VideoCapture(0)  # 0 = default webcam
+**Via CLI** (recommended):
+```bash
+python main.py --source 1              # Second camera
+python main.py --source video.mp4      # Video file
+python main.py --source rtsp://...     # IP camera
 ```
-- `1`, `2`, etc.: Other camera devices
-- `"video.mp4"`: Video file path
-- `"http://..."`: IP camera stream
+
+**Via Code**: Modify `video_source` parameter in `run_detection()` call
 
 #### Customizing Visualization
-Bounding box styling at `main.py:23`:
-```python
-cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-#                                         ^^^^^^^^^^^  ^
-#                                         Color (BGR)  Thickness
+**Via CLI**:
+```bash
+python main.py --color 0,0,255 --thickness 3  # Red, thicker boxes
 ```
 
-Text styling at `main.py:24`:
+**Via Code**: Modify ObjectDetector constructor parameters (lines 38-41):
 ```python
-cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^  ^
-#                                        Font                           Size Color        Thickness
+box_color: Tuple[int, int, int] = (0, 255, 0)  # BGR color
+box_thickness: int = 2                          # Line thickness
+font_scale: float = 0.6                        # Text size
+font_thickness: int = 2                        # Text thickness
+```
+
+#### Adding Custom Features
+The class-based design makes it easy to extend:
+
+```python
+class CustomDetector(ObjectDetector):
+    def detect_objects(self, frame):
+        # Call parent method
+        annotated_frame, objects = super().detect_objects(frame)
+
+        # Add custom logic
+        # ... your code here ...
+
+        return annotated_frame, objects
 ```
 
 ## Code Conventions
 
-### Style Guidelines
-- **Indentation**: 4 spaces
-- **Naming**: snake_case for functions and variables
-- **Line Length**: Generally under 100 characters
-- **Imports**: Grouped at top (stdlib, third-party)
+### Style Guidelines (PEP 8 + Modern Python)
+- **Indentation**: 4 spaces (strictly enforced)
+- **Naming**:
+  - snake_case for functions, variables, methods
+  - PascalCase for classes (e.g., ObjectDetector)
+  - UPPER_CASE for constants
+- **Line Length**: 88-100 characters (Black formatter style)
+- **Imports**: Grouped and ordered (stdlib → third-party → local)
+- **Quotes**: Double quotes for docstrings, single quotes preferred for strings
+- **Type Hints**: Required for all function signatures and class attributes
+- **Docstrings**: Google-style docstrings for all public methods
 
-### Current Patterns
-- Global model initialization for efficiency
-- Single-responsibility functions
-- Clear variable names (frame, results, detected_objects)
-- Confidence filtering before processing
-- Clean resource management (cap.release(), cv2.destroyAllWindows())
+### Current Patterns (2025)
 
-### Error Handling
-Currently minimal - consider adding:
-- Camera access failure handling
-- Model loading error handling
-- Frame read failure handling (partially present with `if not ret`)
+**Object-Oriented Design**:
+- Encapsulation via ObjectDetector class
+- Dependency injection through constructor
+- Single Responsibility Principle per method
+
+**Type Safety**:
+```python
+def detect_objects(self, frame: np.ndarray) -> Tuple[np.ndarray, List[str]]:
+```
+- Full type annotations
+- Modern union syntax: `int | str` instead of `Union[int, str]`
+
+**Logging Instead of Print**:
+```python
+logger.info(f"Video opened: {width}x{height} @ {fps}fps")
+```
+- Structured logging with levels (INFO, DEBUG, WARNING, ERROR)
+- Timestamps and formatted output
+
+**Error Handling**:
+- Try-except blocks with specific exception types
+- Finally blocks for resource cleanup
+- Proper error messages via logging
+- RuntimeError for unrecoverable errors
+
+**Resource Management**:
+```python
+try:
+    # Main loop
+finally:
+    cap.release()
+    cv2.destroyAllWindows()
+```
+- Guaranteed cleanup even on errors
+- No resource leaks
+
+**Command-Line Interface**:
+- Professional argparse with help text
+- Input validation before processing
+- Exit codes (0 for success, 1 for errors)
 
 ## Extension Points
 
@@ -175,23 +317,32 @@ Currently minimal - consider adding:
    - Use cv2.VideoWriter to save annotated video
    - Add start/stop recording controls
 
-### Adding Configuration
-Consider creating a config structure for:
-- Model selection
-- Confidence threshold
-- Video source
-- Display settings
-- Color schemes
+### Adding Configuration File Support
 
-Example:
+The current CLI-based configuration is flexible, but you could add config file support:
+
 ```python
-CONFIG = {
-    'model': 'yolov8n.pt',
-    'confidence_threshold': 0.5,
-    'video_source': 0,
-    'box_color': (0, 255, 0),
-    'box_thickness': 2
-}
+from pathlib import Path
+import yaml  # or json
+
+def load_config(config_path: Path) -> dict:
+    """Load configuration from YAML file."""
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+# In main():
+if args.config:
+    config = load_config(Path(args.config))
+    detector = ObjectDetector(**config)
+```
+
+Example `config.yaml`:
+```yaml
+model_name: yolov8m.pt
+confidence_threshold: 0.6
+box_color: [0, 255, 0]
+box_thickness: 2
+font_scale: 0.7
 ```
 
 ## Best Practices for AI Assistants
@@ -199,28 +350,62 @@ CONFIG = {
 ### When Modifying Code
 
 1. **Always Read First**: Use Read tool on `main.py` before making changes
-2. **Understand Context**: The file is small - read the entire file to understand flow
-3. **Test Considerations**: Changes affect real-time video processing
-4. **Dependencies**: Be aware that cv2 and ultralytics must be installed
+2. **Understand the Class Structure**: Code is object-oriented - understand ObjectDetector class
+3. **Maintain Type Hints**: Add type annotations to all new functions/methods
+4. **Use Logging**: Never use `print()` - always use `logger.info/debug/warning/error()`
+5. **Follow Error Handling Patterns**: Use try-except-finally blocks
+6. **Test CLI Arguments**: Verify argparse integration after changes
+7. **Update Docstrings**: Maintain Google-style docstrings
 
 ### Common Modification Scenarios
 
 **Scenario: Add new detection filter**
-- Location: Inside `detect_objects()` function
-- Add filtering logic after confidence check at `main.py:17`
+- **Location**: Inside `ObjectDetector.detect_objects()` method
+- **Line**: After confidence check at `main.py:94`
+- **Example**: Filter by specific object classes
+```python
+if confidence > self.confidence_threshold and label in ['person', 'car']:
+```
+
+**Scenario: Add new CLI argument**
+- **Location**: `parse_arguments()` function at `main.py:193-250`
+- **Steps**:
+  1. Add argument to parser
+  2. Update `main()` to handle new argument
+  3. Pass to ObjectDetector constructor or method
+  4. Update type hints
 
 **Scenario: Change UI/display**
-- Location: Inside `detect_objects()` for per-object annotations
-- Location: Inside `main()` for overall window/display settings
+- **Location**: `ObjectDetector.detect_objects()` for per-object annotations (lines 98-118)
+- **Location**: `ObjectDetector.run_detection()` for window settings (line 125)
+- **Example**: Add FPS counter to display
 
 **Scenario: Performance optimization**
-- Consider: Frame skipping, resolution reduction, model variant
-- Location: `main()` loop for frame handling, line 5 for model selection
+- **Approaches**:
+  - Frame skipping in `run_detection()` loop
+  - Resolution reduction before inference
+  - Model variant change (default in constructor)
+  - Batch processing (modify `detect_objects()`)
 
-**Scenario: Add command-line arguments**
-- Use argparse module
-- Parse arguments before `main()` call
-- Pass configuration to functions
+**Scenario: Add new method to ObjectDetector**
+- **Requirements**:
+  - Type hints for parameters and return value
+  - Google-style docstring
+  - Proper error handling
+  - Use self.logger for logging
+
+**Scenario: Extend ObjectDetector class**
+- **Recommended**: Use inheritance
+```python
+class AdvancedDetector(ObjectDetector):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Additional initialization
+
+    def detect_objects(self, frame: np.ndarray) -> Tuple[np.ndarray, List[str]]:
+        # Override with custom logic
+        pass
+```
 
 ### Safety Considerations
 
@@ -293,4 +478,7 @@ Full list available via: `model.names` dictionary
 
 **Last Updated**: 2025-12-22
 **Repository**: YOLO-ObjectDetection
-**Primary File**: main.py (49 lines)
+**Primary File**: main.py (300 lines)
+**Python Version**: 3.8+ (modern type hints require 3.10+ for `int | str` syntax)
+**Architecture**: Object-Oriented with CLI support
+**Code Quality**: Production-ready with full type hints, logging, and error handling

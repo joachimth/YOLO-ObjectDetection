@@ -1,0 +1,22 @@
+# YOLO Object Detection Requirements
+# Updated: 2025-12-22
+
+# Computer Vision and Image Processing
+opencv-python>=4.10.0
+
+# YOLOv8 Object Detection
+ultralytics>=8.3.0
+
+# Additional dependencies (automatically installed by ultralytics)
+# - torch>=2.0.0 (PyTorch for deep learning)
+# - torchvision>=0.15.0 (Vision utilities)
+# - numpy>=1.23.0 (Array operations)
+# - pillow>=10.0.0 (Image processing)
+# - pyyaml>=6.0 (Configuration)
+# - requests>=2.31.0 (HTTP library)
+# - matplotlib>=3.7.0 (Visualization)
+# - pandas>=2.0.0 (Data handling)
+
+# Optional GPU Support
+# torch with CUDA support - install separately:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
