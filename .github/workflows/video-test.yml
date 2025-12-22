@@ -26,12 +26,17 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+          # Minimal dependencies for opencv-python-headless
+          sudo apt-get install -y libglib2.0-0 libgomp1
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          # Install opencv-python-headless for CI/CD (no GUI dependencies)
+          pip uninstall -y opencv-python opencv-python-headless || true
+          pip install opencv-python-headless>=4.10.0
+          # Install remaining dependencies
+          pip install ultralytics>=8.3.0 pyyaml>=6.0
 
       - name: Download test video
         run: |
