@@ -1,9 +1,9 @@
 # YOLO Object Detection 🎯
 
-Real-time object detection using YOLOv8 and webcam feed. Detect and track 80 different object classes with state-of-the-art accuracy and speed.
+Real-time object detection using YOLO11 and webcam feed. Detect and track 80 different object classes with state-of-the-art accuracy and speed.
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-00FFFF.svg)
+![YOLO11](https://img.shields.io/badge/YOLO11-Ultralytics-00FFFF.svg)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
 
@@ -46,7 +46,7 @@ Real-time object detection using YOLOv8 and webcam feed. Detect and track 80 dif
    python main.py
    ```
 
-The YOLOv8 model will be downloaded automatically on first run (~6MB).
+The YOLO11 model will be downloaded automatically on first run (~6MB).
 
 ## Usage 📖
 
@@ -81,7 +81,7 @@ python main.py --source 1
 python main.py --source video.mp4
 
 # Use different model
-python main.py --model yolov8s.pt
+python main.py --model yolo11s.pt
 
 # Adjust confidence threshold
 python main.py --confidence 0.7
@@ -102,48 +102,57 @@ python main.py --no-fps
 python main.py --no-stats
 
 # Combine multiple options
-python main.py --source video.mp4 --model yolov8m.pt --confidence 0.6 --tracking --alert person
+python main.py --source video.mp4 --model yolo11m.pt --confidence 0.6 --tracking --alert person
 ```
 
 ### Configuration File Usage
 
-Create a YAML configuration file for easier management:
+The application automatically loads `config.yaml` if it exists:
 
 ```bash
-# Copy example config
+# Copy example config and customize
 cp config.example.yaml config.yaml
 
 # Edit config.yaml with your settings
-# Then run with config file
-python main.py --config config.yaml
+# Then just run (config.yaml is auto-loaded)
+python main.py
+
+# Or use a custom config file
+python main.py --config custom.yaml
 
 # CLI arguments override config file settings
-python main.py --config config.yaml --confidence 0.8
+python main.py --confidence 0.8
 ```
 
-Example `config.yaml`:
+Default `config.yaml`:
 ```yaml
-model_name: "yolov8n.pt"
+model_name: "yolo11n.pt"
 confidence_threshold: 0.5
 video_source: 0
-enable_tracking: true
+enable_tracking: false
 show_fps: true
 show_stats: true
-alert_objects:
-  - person
-  - car
+alert_objects: []
 box_color: [0, 255, 0]
 ```
 
-### Available Models
+See `config.example.yaml` for detailed documentation of all YOLO11 models and settings.
 
-| Model | Size | Speed | Accuracy | Use Case |
-|-------|------|-------|----------|----------|
-| yolov8n.pt | 6MB | Fastest | Good | Real-time on CPU |
-| yolov8s.pt | 22MB | Fast | Better | Balanced CPU usage |
-| yolov8m.pt | 52MB | Medium | Great | Better accuracy |
-| yolov8l.pt | 87MB | Slow | Excellent | GPU recommended |
-| yolov8x.pt | 136MB | Slowest | Best | Max accuracy, GPU only |
+### Available Models (YOLO11)
+
+| Model | Size | Parameters | CPU Speed | Accuracy | Use Case |
+|-------|------|------------|-----------|----------|----------|
+| yolo11n.pt | 6MB | 2.6M | 80+ FPS | Good | Real-time on CPU, edge devices |
+| yolo11s.pt | 18MB | 9.4M | 50+ FPS | Better | Balanced performance |
+| yolo11m.pt | 40MB | 20.1M | 30+ FPS | Great | Higher accuracy, GPU recommended |
+| yolo11l.pt | 50MB | 25.3M | 15+ FPS | Excellent | Maximum accuracy, GPU required |
+| yolo11x.pt | 56MB | 56.9M | 8+ FPS | Best | Research/offline, powerful GPU |
+
+**Why YOLO11?**
+- 22% fewer parameters than YOLOv8 with higher accuracy
+- Better stability under domain shift
+- Improved small-object detection
+- Production-ready (released Sept 2024)
 
 ## Detected Object Classes 🏷️
 
@@ -167,10 +176,10 @@ And more! Full list available in the code via `model.names`.
 
 ### Architecture
 
-- **Detection Model**: YOLOv8 (You Only Look Once version 8)
+- **Detection Model**: YOLO11 (You Only Look Once version 11)
 - **Framework**: Ultralytics
 - **Video Processing**: OpenCV
-- **Default Model**: YOLOv8 Nano (optimized for speed)
+- **Default Model**: YOLO11 Nano (optimized for speed)
 - **Inference**: Real-time single-shot detection
 
 ### Performance
@@ -241,12 +250,12 @@ cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0
 
 ### Model Download Fails
 
-**Issue**: YOLOv8 model doesn't download
+**Issue**: YOLO11 model doesn't download
 
 **Solutions**:
 - Check internet connection
 - Manually download from [Ultralytics GitHub](https://github.com/ultralytics/assets/releases)
-- Place `yolov8n.pt` in project directory
+- Place `yolo11n.pt` in project directory
 - Check firewall settings
 
 ### Low FPS / Laggy Performance
@@ -254,7 +263,7 @@ cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0
 **Issue**: Detection is slow
 
 **Solutions**:
-- Use nano model: `YOLO("yolov8n.pt")`
+- Use nano model: `YOLO("yolo11n.pt")` (default)
 - Reduce frame resolution before processing
 - Skip frames: process every 2nd or 3rd frame
 - Use GPU acceleration (see Advanced Usage)
@@ -277,10 +286,11 @@ cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0
 YOLO-ObjectDetection/
 ├── main.py              # Main application with CLI and tracking
 ├── requirements.txt     # Python dependencies
-├── config.example.yaml  # Example configuration file
+├── config.yaml          # Default configuration (auto-loaded)
+├── config.example.yaml  # Example config with detailed docs
 ├── README.md           # This file
 ├── CLAUDE.md           # AI assistant documentation
-└── yolov8n.pt          # Model weights (auto-downloaded)
+└── yolo11n.pt          # Model weights (auto-downloaded)
 ```
 
 ## Contributing 🤝
@@ -310,13 +320,14 @@ This project is licensed under the MIT License. See LICENSE file for details.
 
 ## Acknowledgments 🙏
 
-- **Ultralytics** for the excellent YOLOv8 implementation
+- **Ultralytics** for the excellent YOLO11 implementation
 - **OpenCV** community for computer vision tools
 - **COCO Dataset** for training data and class definitions
 
 ## Resources 📚
 
-- [YOLOv8 Documentation](https://docs.ultralytics.com/)
+- [YOLO11 Documentation](https://docs.ultralytics.com/models/yolo11/)
+- [Ultralytics Docs](https://docs.ultralytics.com/)
 - [OpenCV Python Tutorials](https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html)
 - [COCO Dataset](https://cocodataset.org/)
 - [Ultralytics GitHub](https://github.com/ultralytics/ultralytics)
@@ -330,4 +341,4 @@ For issues and questions:
 
 ---
 
-**Made with ❤️ using YOLOv8 and OpenCV**
+**Made with ❤️ using YOLO11 and OpenCV**
