@@ -235,12 +235,31 @@ cat detections.json | jq '[.frames[] | select(.object_count > 0)] | length'
 cat detections.json | jq '[.frames[].object_count] | add / length'
 ```
 
+## CI/CD Environments
+
+When running in CI/CD environments (GitHub Actions, GitLab CI, etc.), use `opencv-python-headless` instead of `opencv-python`:
+
+```bash
+# Uninstall GUI version
+pip uninstall -y opencv-python
+
+# Install headless version
+pip install opencv-python-headless>=4.10.0
+```
+
+The GitHub Actions workflow automatically handles this by installing `opencv-python-headless` instead of the GUI version.
+
 ## Troubleshooting
 
 ### Video Won't Process
 - Check video codec (use MP4 with H.264)
 - Verify file isn't corrupted: `ffmpeg -v error -i video.mp4 -f null -`
 - Try re-encoding: `ffmpeg -i input.mp4 -c:v libx264 -c:a aac output.mp4`
+
+### CI/CD: OpenCV Import Errors
+- **Error:** `ImportError: libGL.so.1: cannot open shared object file`
+- **Solution:** Use `opencv-python-headless` instead of `opencv-python` in CI/CD
+- **Fix:** The workflow now automatically installs the headless version
 
 ### No Objects Detected
 - Lower confidence threshold: `--confidence 0.3`

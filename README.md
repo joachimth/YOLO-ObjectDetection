@@ -45,6 +45,11 @@ Real-time object detection using YOLO11 and webcam feed. Detect and track 80 dif
    pip install -r requirements.txt
    ```
 
+   **For CI/CD environments** (no display):
+   ```bash
+   pip install opencv-python-headless>=4.10.0 ultralytics>=8.3.0 pyyaml>=6.0
+   ```
+
 3. **Run the application**
    ```bash
    python main.py
