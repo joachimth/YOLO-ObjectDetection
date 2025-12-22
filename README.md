@@ -19,6 +19,10 @@ Real-time object detection using YOLO11 and webcam feed. Detect and track 80 dif
 - **Multiple YOLO Models**: Support for nano, small, medium, large, and extra-large variants
 - **Configuration Files**: YAML-based configuration with CLI override support
 - **Professional CLI**: Full command-line interface with argparse
+- **Video Output**: Save annotated videos with detections
+- **Data Export**: Export detection data to JSON format
+- **Headless Mode**: Run without display for CI/CD environments
+- **Automated Testing**: GitHub Actions workflow for video testing
 
 ## Quick Start 🚀
 
@@ -103,6 +107,62 @@ python main.py --no-stats
 
 # Combine multiple options
 python main.py --source video.mp4 --model yolo11m.pt --confidence 0.6 --tracking --alert person
+```
+
+### Video Processing & Export
+
+Process video files and export results:
+
+```bash
+# Process video and save annotated output
+python main.py --source input.mp4 --output output.mp4
+
+# Export detection data to JSON
+python main.py --source input.mp4 --data-output detections.json
+
+# Headless mode (no display window) for CI/CD
+python main.py --source input.mp4 --output output.mp4 --data-output detections.json --headless
+
+# Complete example: process video, save results, headless
+python main.py \
+  --source test_video.mp4 \
+  --model yolo11n.pt \
+  --confidence 0.5 \
+  --output annotated_video.mp4 \
+  --data-output detection_data.json \
+  --headless \
+  --verbose
+```
+
+**Detection Data Format** (JSON):
+```json
+{
+  "metadata": {
+    "video_source": "test.mp4",
+    "model": "yolo11n.pt",
+    "confidence_threshold": 0.5,
+    "timestamp": "2025-12-22T10:30:00",
+    "resolution": "1280x720",
+    "fps": 30
+  },
+  "frames": [
+    {
+      "frame_number": 0,
+      "timestamp": 0.0,
+      "objects": ["car", "person", "person"],
+      "unique_objects": ["car", "person"],
+      "object_count": 3
+    }
+  ],
+  "summary": {
+    "total_frames": 150,
+    "total_detections": 450,
+    "class_counts": {
+      "car": 300,
+      "person": 150
+    }
+  }
+}
 ```
 
 ### Configuration File Usage
@@ -201,6 +261,49 @@ And more! Full list available in the code via `model.names`.
 - RAM: 8GB
 - Python: 3.10+
 
+## Automated Testing 🤖
+
+The repository includes a GitHub Actions workflow that automatically tests YOLO detection on every push:
+
+### How It Works
+
+1. **Triggers**: Runs on push to `main` or `claude/**` branches, and on pull requests
+2. **Process**: Downloads a test video, runs detection, exports results
+3. **Artifacts**: Saves annotated video and detection data for download
+4. **Summary**: Displays detection statistics in workflow summary
+
+### Viewing Test Results
+
+After a workflow run:
+1. Go to **Actions** tab in GitHub
+2. Click the latest workflow run
+3. View the **Summary** with detection statistics
+4. Download artifacts:
+   - `annotated-video` - Processed video with bounding boxes
+   - `detection-data` - JSON file with all detections
+
+### Running Tests Locally
+
+Download test videos:
+```bash
+./download_test_videos.sh
+```
+
+Run detection on test video:
+```bash
+python main.py \
+  --source test_videos/people_walking.mp4 \
+  --output output.mp4 \
+  --data-output detections.json \
+  --headless
+```
+
+See **[TEST_VIDEOS.md](TEST_VIDEOS.md)** for:
+- Free test video sources (Pixabay, Pexels)
+- Best practices for test videos
+- How to analyze detection results
+- Complete testing guide
+
 ## Advanced Usage 🎓
 
 ### GPU Acceleration
@@ -284,13 +387,18 @@ cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0
 
 ```
 YOLO-ObjectDetection/
-├── main.py              # Main application with CLI and tracking
-├── requirements.txt     # Python dependencies
-├── config.yaml          # Default configuration (auto-loaded)
-├── config.example.yaml  # Example config with detailed docs
-├── README.md           # This file
-├── CLAUDE.md           # AI assistant documentation
-└── yolo11n.pt          # Model weights (auto-downloaded)
+├── main.py                      # Main application with CLI and tracking
+├── requirements.txt             # Python dependencies
+├── config.yaml                  # Default configuration (auto-loaded)
+├── config.example.yaml          # Example config with detailed docs
+├── download_test_videos.sh      # Script to download test videos
+├── .github/
+│   └── workflows/
+│       └── video-test.yml       # GitHub Actions workflow
+├── README.md                    # This file
+├── TEST_VIDEOS.md               # Test video guide
+├── CLAUDE.md                    # AI assistant documentation
+└── yolo11n.pt                   # Model weights (auto-downloaded)
 ```
 
 ## Contributing 🤝
@@ -303,16 +411,21 @@ Contributions are welcome! Recently completed features:
 - [x] Object counting and statistics
 - [x] Alert system for specific objects
 - [x] Configuration file support
+- [x] Video output (save annotated videos)
+- [x] Export detection data to JSON
+- [x] Headless mode for CI/CD
+- [x] GitHub Actions workflow for automated testing
 
 Areas for future improvement:
 
-- [ ] Implement video recording functionality
 - [ ] Multi-camera support
 - [ ] Web interface for remote viewing
-- [ ] Export detection data to CSV/JSON
+- [ ] Export detection data to CSV format
 - [ ] Custom alert actions (email, webhook, sound)
 - [ ] Region of interest (ROI) detection
 - [ ] Heat map generation for object movement
+- [ ] Performance benchmarking tools
+- [ ] Docker containerization
 
 ## License 📄
 
