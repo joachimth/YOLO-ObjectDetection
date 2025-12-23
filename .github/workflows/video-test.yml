@@ -42,15 +42,15 @@ jobs:
         run: |
           # Download a short sample video from Pexels (free stock video)
           # This is a short clip of people walking - good for object detection testing
-          curl -L -o test_video.mp4 "https://pixabay.com/videos/download/video-176796_medium.mp4"
+          #curl -L -o test_video.mp4 "https://pixabay.com/videos/download/video-176796_medium.mp4"
 
           # Verify video was downloaded
-          ls -lh test_video.mp4
+          #ls -lh test_video.mp4
 
       - name: Run YOLO object detection
         run: |
           python main.py \
-            --source test_video.mp4 \
+            --source test_videos\test_video.mp4 \
             --model yolo11n.pt \
             --confidence 0.5 \
             --output output_video.mp4 \
