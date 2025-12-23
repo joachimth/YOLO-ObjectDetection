@@ -42,7 +42,7 @@ jobs:
         run: |
           # Download a short sample video from Pexels (free stock video)
           # This is a short clip of people walking - good for object detection testing
-          curl -L -o test_video.mp4 "https://cdn.pixabay.com/video/2019/07/18/25307-349368863_tiny.mp4"
+          curl -L -o test_video.mp4 "https://pixabay.com/videos/download/video-176796_medium.mp4"
 
           # Verify video was downloaded
           ls -lh test_video.mp4
